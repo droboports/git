@@ -137,14 +137,16 @@ _build() {
 }
 
 _create_tgz() {
-  local appname="$(basename $(pwd))"
-  local appfile="${appname}.tgz"
+  local appname="$(basename ${PWD})"
+  local appfile="${PWD}/${appname}.tgz"
 
   if [[ -f "${appfile}" ]]; then
     rm -v "${appfile}"
   fi
 
-  tar --verbose --create --numeric-owner --owner=0 --group=0 --gzip --file "${appfile}" -C "${DEST}" .
+  pushd "${DEST}"
+  tar --verbose --create --numeric-owner --owner=0 --group=0 --gzip --file "${appfile}" *
+  popd
 }
 
 _package() {
