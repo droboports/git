@@ -7,6 +7,8 @@ set -o errexit
 set -o nounset
 # return error of last failed command in pipe
 set -o pipefail
+# expand aliases
+shopt -s expand_aliases
 # print trace
 set -o xtrace
 
@@ -20,7 +22,7 @@ exec 1> >(tee -a "${logfile}")
 exec 2> >(tee -a "${logfile}" >&2)
 
 ### environment variables ###
-. crosscompile.sh
+source crosscompile.sh
 export NAME="git"
 export DEST="/mnt/DroboFS/Shares/DroboApps/${NAME}"
 export DEPS="/mnt/DroboFS/Shares/DroboApps/${NAME}deps"
@@ -28,14 +30,14 @@ export CFLAGS="${CFLAGS:-} -Os -fPIC"
 export CXXFLAGS="${CXXFLAGS:-} ${CFLAGS}"
 export CPPFLAGS="-I${DEPS}/include"
 export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,${DEST}/lib -L${DEST}/lib"
-alias make="make -j8  V=1 VERBOSE=1"
+alias make="make -j8 V=1 VERBOSE=1"
 
 # $1: file
 # $2: url
 # $3: folder
 _download_tgz() {
   [[ ! -f "download/${1}" ]] && wget -O "download/${1}" "${2}"
-  [[ -d "target/${3}" ]]   && rm -v -fr "target/${3}"
+  [[ -d "target/${3}" ]] && rm -v -fr "target/${3}"
   [[ ! -d "target/${3}" ]] && tar -zxvf "download/${1}" -C target
 }
 
