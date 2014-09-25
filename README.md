@@ -15,7 +15,7 @@ Log in the VM, pick a temporary folder (e.g., `~/build`), and then do:
 
 ```
 git clone https://github.com/droboports/git.git
-cd unrar
+cd git
 ./build.sh
 ```
 
