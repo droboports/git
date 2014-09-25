@@ -31,7 +31,7 @@ Each invocation creates a log file with all the generated output.
 * openssl: http://www.openssl.org/
 * curl: http://curl.haxx.se/
 * expat: http://expat.sourceforge.net/
-* openssh: http://www.openssh.com/
+* git: http://git-scm.com/
 
 ## Help support the apps
 
