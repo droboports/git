@@ -21,9 +21,9 @@ exec 1> >(tee -a "${logfile}")
 # redirect errors to stdout
 exec 2> >(tee -a "${logfile}" >&2)
 
-### environment variables ###
+### environment setup ###
 source crosscompile.sh
-export NAME="git"
+export NAME="$(basename ${PWD})"
 export DEST="/mnt/DroboFS/Shares/DroboApps/${NAME}"
 export DEPS="${PWD}/target/install"
 export CFLAGS="${CFLAGS:-} -Os -fPIC"
@@ -32,142 +32,114 @@ export CPPFLAGS="-I${DEPS}/include"
 export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,${DEST}/lib -L${DEST}/lib"
 alias make="make -j8 V=1 VERBOSE=1"
 
+### support functions ###
+# Download a TGZ file and unpack it, removing old files.
 # $1: file
 # $2: url
 # $3: folder
 _download_tgz() {
+  [[ ! -d "download" ]]      && mkdir -p "download"
+  [[ ! -d "target" ]]        && mkdir -p "target"
   [[ ! -f "download/${1}" ]] && wget -O "download/${1}" "${2}"
-  [[ -d "target/${3}" ]] && rm -v -fr "target/${3}"
-  [[ ! -d "target/${3}" ]] && tar -zxvf "download/${1}" -C target
+  [[   -d "target/${3}" ]]   && rm -vfr "target/${3}"
+  [[ ! -d "target/${3}" ]]   && tar -zxvf "download/${1}" -C target
+  return 0
 }
 
-### ZLIB ###
-_build_zlib() {
-local VERSION="1.2.8"
-local FOLDER="zlib-${VERSION}"
-local FILE="${FOLDER}.tar.gz"
-local URL="http://zlib.net/${FILE}"
-
-_download_tgz "${FILE}" "${URL}" "${FOLDER}"
-pushd target/"${FOLDER}"
-./configure --prefix="${DEPS}" --libdir="${DEST}/lib"
-make
-make install
-rm -v "${DEST}/lib"/*.a
-popd
+# Download a TGZ file and unpack it, removing old files.
+# $1: file
+# $2: url
+# $3: folder
+_download_xz() {
+  [[ ! -d "download" ]]      && mkdir -p "download"
+  [[ ! -d "target" ]]        && mkdir -p "target"
+  [[ ! -f "download/${1}" ]] && wget -O "download/${1}" "${2}"
+  [[   -d "target/${3}" ]]   && rm -vfr "target/${3}"
+  [[ ! -d "target/${3}" ]]   && tar -Jxvf "download/${1}" -C target
+  return 0
 }
 
-### OPENSSL ###
-_build_openssl() {
-local VERSION="1.0.1i"
-local FOLDER="openssl-${VERSION}"
-local FILE="${FOLDER}.tar.gz"
-local URL="http://www.openssl.org/source/${FILE}"
-
-_download_tgz "${FILE}" "${URL}" "${FOLDER}"
-pushd target/"${FOLDER}"
-./Configure --prefix="${DEPS}" \
-  --openssldir="${DEST}/etc/ssl" \
-  --with-zlib-include="${DEPS}/include" \
-  --with-zlib-lib="${DEPS}/lib" \
-  shared zlib-dynamic threads linux-armv4 -DL_ENDIAN ${CFLAGS} ${LDFLAGS}
-sed -i -e "s/-O3//g" Makefile
-make -j1
-make install_sw
-mkdir -p "${DEST}/libexec"
-cp -v -a "${DEPS}/bin/openssl" "${DEST}/libexec/"
-cp -v -aR "${DEPS}/lib"/* "${DEST}/lib/"
-rm -v -fr "${DEPS}/lib"
-rm -v "${DEST}/lib"/*.a
-sed -i -e "s|^exec_prefix=.*|exec_prefix=${DEST}|g" "${DEST}/lib/pkgconfig/openssl.pc"
-popd
+# Download a DroboApp and unpack it, removing old files.
+# $1: file
+# $2: url
+# $3: folder
+_download_app() {
+  [[ ! -d "download" ]]      && mkdir -p "download"
+  [[ ! -d "target" ]]        && mkdir -p "target"
+  [[ ! -f "download/${1}" ]] && wget -O "download/${1}" "${2}"
+  [[   -d "target/${3}" ]]   && rm -vfr "target/${3}"
+  mkdir -p "target/${3}"
+  tar -zxvf "download/${1}" -C "target/${3}"
+  return 0
 }
 
-### CURL ###
-_build_curl() {
-local VERSION="7.38.0"
-local FOLDER="curl-${VERSION}"
-local FILE="${FOLDER}.tar.gz"
-local URL="http://curl.haxx.se/download/${FILE}"
-
-_download_tgz "${FILE}" "${URL}" "${FOLDER}"
-pushd target/"${FOLDER}"
-./configure --host=arm-none-linux-gnueabi --prefix="${DEPS}" --libdir="${DEST}/lib" --disable-static --disable-debug --disable-curldebug --with-ssl --with-zlib --with-random --with-ca-bundle=$DEST/etc/ssl/certs/ca-certificates.crt
-make
-make install
-popd
+# Clone last commit of a single branch from git, removing old files.
+# $1: branch
+# $2: folder
+# $3: url
+_download_git() {
+  [[ ! -d "target" ]]        && mkdir -p "target"
+  [[   -d "target/${2}" ]]   && rm -vfr "target/${2}"
+  [[ ! -d "target/${2}" ]]   && git clone --branch "${1}" --single-branch --depth 1 "${3}" "target/${2}"
+  return 0
 }
 
-### EXPAT ###
-_build_expat() {
-local VERSION="2.1.0"
-local FOLDER="expat-${VERSION}"
-local FILE="${FOLDER}.tar.gz"
-local URL="http://switch.dl.sourceforge.net/project/expat/expat/2.1.0/${FILE}"
-
-_download_tgz "${FILE}" "${URL}" "${FOLDER}"
-pushd target/"${FOLDER}"
-./configure --host=arm-none-linux-gnueabi --prefix="${DEPS}" --libdir="${DEST}/lib" --disable-static
-make
-make install
-popd
+# Download a file, overwriting existing.
+# $1: file
+# $2: url
+_download_file() {
+  [[ ! -d "download" ]]      && mkdir -p "download"
+  [[ ! -f "download/${1}" ]] && wget -O "download/${1}" "${2}"
+  return 0
 }
 
-### GIT ###
-_build_git() {
-local VERSION="2.1.1"
-local FOLDER="git-${VERSION}"
-local FILE="${FOLDER}.tar.gz"
-local URL="https://www.kernel.org/pub/software/scm/git/${FILE}"
-
-_download_tgz "${FILE}" "${URL}" "${FOLDER}"
-pushd target/"${FOLDER}"
-./configure --host=arm-none-linux-gnueabi --prefix="${DEST}" --mandir="${DEST}/man" --with-openssl --with-curl --with-expat ac_cv_fread_reads_directories=no ac_cv_snprintf_returns_bogus=no ac_cv_lib_curl_curl_global_init=yes
-make
-make install
-popd
+# Download a file in a specific folder, overwriting existing.
+# $1: file
+# $2: url
+# $3: folder
+_download_file_in_folder() {
+  [[ ! -d "download/${3}" ]]      && mkdir -p "download/${3}"
+  [[ ! -f "download/${3}/${1}" ]] && wget -O "download/${3}/${1}" "${2}"
+  return 0
 }
 
-### BUILD ###
-_build() {
-  _build_zlib
-  _build_openssl
-  _build_curl
-  _build_expat
-  _build_git
-  _package
-}
-
+# Create the DroboApp tgz file.
 _create_tgz() {
-  local appname="$(basename ${PWD})"
-  local appfile="${PWD}/${appname}.tgz"
+  local FILE="${PWD}/${NAME}.tgz"
 
-  if [[ -f "${appfile}" ]]; then
-    rm -v "${appfile}"
+  if [[ -f "${FILE}" ]]; then
+    rm -v "${FILE}"
   fi
 
   pushd "${DEST}"
-  tar --verbose --create --numeric-owner --owner=0 --group=0 --gzip --file "${appfile}" *
+  tar --verbose --create --numeric-owner --owner=0 --group=0 --gzip --file "${FILE}" *
   popd
 }
 
+# Package the DroboApp
 _package() {
-  cp -v -faR src/dest/* "${DEST}"/
+  mkdir -p "${DEST}"
+  [[ -d "src/dest" ]] && cp -vafR "src/dest"/* "${DEST}"/
   find "${DEST}" -name "._*" -print -delete
   _create_tgz
 }
 
+# Remove all compiled files.
 _clean() {
-  rm -v -fr "${DEPS}"
-  rm -v -fr "${DEST}"
-  rm -v -fr target/*
+  rm -vfr "${DEPS}"
+  rm -vfr "${DEST}"
+  rm -vfr target/*
 }
 
+# Removes all files created during the build.
 _dist_clean() {
   _clean
-  rm -v -f logfile*
-  rm -v -fr download/*
+  rm -vf logfile*
+  rm -vfr download/*
 }
+
+### application-specific functions ###
+source app.sh
 
 case "${1:-}" in
   clean)     _clean ;;
