@@ -29,7 +29,7 @@ patch -p1 < openssl-1.0.2-parallel-build.patch
   --openssldir="${DEST}/etc/ssl" \
   --with-zlib-include="${DEPS}/include" \
   --with-zlib-lib="${DEPS}/lib" \
-  shared zlib-dynamic threads linux-armv4 -DL_ENDIAN ${CFLAGS} ${LDFLAGS}
+  shared zlib-dynamic threads linux-armv4 no-asm -DL_ENDIAN ${CFLAGS} ${LDFLAGS}
 sed -i -e "s/-O3//g" Makefile
 make
 make install_sw
