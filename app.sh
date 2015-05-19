@@ -16,15 +16,15 @@ popd
 
 ### OPENSSL ###
 _build_openssl() {
-local VERSION="1.0.2"
+local VERSION="1.0.2a"
 local FOLDER="openssl-${VERSION}"
 local FILE="${FOLDER}.tar.gz"
 local URL="http://www.openssl.org/source/${FILE}"
 
 _download_tgz "${FILE}" "${URL}" "${FOLDER}"
-cp -vf src/openssl-1.0.2-parallel-build.patch "target/${FOLDER}/"
+cp -vf "src/${FOLDER}-parallel-build.patch" "target/${FOLDER}/"
 pushd "target/${FOLDER}"
-patch -p1 < openssl-1.0.2-parallel-build.patch
+patch -p1 < "${FOLDER}-parallel-build.patch"
 ./Configure --prefix="${DEPS}" \
   --openssldir="${DEST}/etc/ssl" \
   --with-zlib-include="${DEPS}/include" \
@@ -44,7 +44,7 @@ popd
 
 ### CURL ###
 _build_curl() {
-local VERSION="7.41.0"
+local VERSION="7.42.1"
 local FOLDER="curl-${VERSION}"
 local FILE="${FOLDER}.tar.gz"
 local URL="http://curl.haxx.se/download/${FILE}"
@@ -62,11 +62,11 @@ _build_expat() {
 local VERSION="2.1.0"
 local FOLDER="expat-${VERSION}"
 local FILE="${FOLDER}.tar.gz"
-local URL="http://switch.dl.sourceforge.net/project/expat/expat/2.1.0/${FILE}"
+local URL="http://sourceforge.net/projects/expat/files/expat/${VERSION}/${FILE}"
 
 _download_tgz "${FILE}" "${URL}" "${FOLDER}"
 pushd "target/${FOLDER}"
-./configure --host=arm-none-linux-gnueabi --prefix="${DEPS}" --libdir="${DEST}/lib" --disable-static
+./configure --host="${HOST}" --prefix="${DEPS}" --libdir="${DEST}/lib" --disable-static
 make
 make install
 popd
@@ -74,16 +74,21 @@ popd
 
 ### GIT ###
 _build_git() {
-local VERSION="2.3.2"
+local VERSION="2.4.1"
 local FOLDER="git-${VERSION}"
 local FILE="${FOLDER}.tar.gz"
 local URL="https://www.kernel.org/pub/software/scm/git/${FILE}"
 
 _download_tgz "${FILE}" "${URL}" "${FOLDER}"
 pushd "target/${FOLDER}"
-./configure --host=arm-none-linux-gnueabi --prefix="${DEST}" --mandir="${DEST}/man" --with-openssl --with-curl --with-expat ac_cv_fread_reads_directories=no ac_cv_snprintf_returns_bogus=no ac_cv_lib_curl_curl_global_init=yes
+# build perl5 from https://github.com/droboports/perl5 first
+# then "apt-get install qemu binfmt-support qemu-user-static"
+export QEMU_LD_PREFIX="${TOOLCHAIN}/${HOST}/libc"
+./configure --host="${HOST}" --prefix="${DEST}" --with-openssl --with-curl --with-expat --with-perl="${DROBOAPPS}/perl5/bin/perl" --with-python="${DROBOAPPS}/python2/bin/python"
+# ac_cv_fread_reads_directories=no ac_cv_snprintf_returns_bogus=no ac_cv_lib_curl_curl_global_init=yes
 make
 make install
+mv -v "${DEST}/share/man" "${DEST}/man"
 popd
 }
 
