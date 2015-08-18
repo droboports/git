@@ -27,7 +27,7 @@ fi
 
 start() {
   rm -f "${errorfile}"
-  echo "Java 8 is configured." > "${statusfile}"
+  echo "Git is configured." > "${statusfile}"
   touch "${pidfile}"
   return 0
 }
