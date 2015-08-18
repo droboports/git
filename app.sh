@@ -10,48 +10,55 @@ pushd "target/${FOLDER}"
 ./configure --prefix="${DEPS}" --libdir="${DEST}/lib"
 make
 make install
-rm -v "${DEST}/lib"/*.a
+rm -vf "${DEST}/lib/libz.a"
 popd
 }
 
 ### OPENSSL ###
 _build_openssl() {
-local VERSION="1.0.2a"
+local VERSION="1.0.2d"
 local FOLDER="openssl-${VERSION}"
 local FILE="${FOLDER}.tar.gz"
-local URL="http://www.openssl.org/source/${FILE}"
+local URL="http://mirror.switch.ch/ftp/mirror/openssl/source/${FILE}"
 
 _download_tgz "${FILE}" "${URL}" "${FOLDER}"
 cp -vf "src/${FOLDER}-parallel-build.patch" "target/${FOLDER}/"
 pushd "target/${FOLDER}"
-patch -p1 < "${FOLDER}-parallel-build.patch"
-./Configure --prefix="${DEPS}" \
-  --openssldir="${DEST}/etc/ssl" \
-  --with-zlib-include="${DEPS}/include" \
-  --with-zlib-lib="${DEPS}/lib" \
-  shared zlib-dynamic threads linux-armv4 -DL_ENDIAN ${CFLAGS} ${LDFLAGS}
+patch -p1 -i "${FOLDER}-parallel-build.patch"
+./Configure --prefix="${DEPS}" --openssldir="${DEST}/etc/ssl" \
+  zlib-dynamic --with-zlib-include="${DEPS}/include" --with-zlib-lib="${DEPS}/lib" \
+  shared threads linux-armv4 -DL_ENDIAN ${CFLAGS} ${LDFLAGS} \
+  -Wa,--noexecstack -Wl,-z,noexecstack
 sed -i -e "s/-O3//g" Makefile
 make
 make install_sw
 mkdir -p "${DEST}/libexec"
-cp -v -a "${DEPS}/bin/openssl" "${DEST}/libexec/"
-cp -v -aR "${DEPS}/lib"/* "${DEST}/lib/"
-rm -v -fr "${DEPS}/lib"
-rm -v "${DEST}/lib"/*.a
-sed -i -e "s|^exec_prefix=.*|exec_prefix=${DEST}|g" "${DEST}/lib/pkgconfig/openssl.pc"
+cp -vfa "${DEPS}/bin/openssl" "${DEST}/libexec/"
+cp -vfa "${DEPS}/lib/libssl.so"* "${DEST}/lib/"
+cp -vfa "${DEPS}/lib/libcrypto.so"* "${DEST}/lib/"
+cp -vfaR "${DEPS}/lib/engines" "${DEST}/lib/"
+cp -vfaR "${DEPS}/lib/pkgconfig" "${DEST}/lib/"
+rm -vf "${DEPS}/lib/libcrypto.a" "${DEPS}/lib/libssl.a"
+sed -e "s|^libdir=.*|libdir=${DEST}/lib|g" -i "${DEST}/lib/pkgconfig/libcrypto.pc"
+sed -e "s|^libdir=.*|libdir=${DEST}/lib|g" -i "${DEST}/lib/pkgconfig/libssl.pc"
 popd
 }
 
 ### CURL ###
 _build_curl() {
-local VERSION="7.42.1"
+local VERSION="7.43.0"
 local FOLDER="curl-${VERSION}"
 local FILE="${FOLDER}.tar.gz"
 local URL="http://curl.haxx.se/download/${FILE}"
 
 _download_tgz "${FILE}" "${URL}" "${FOLDER}"
 pushd "target/${FOLDER}"
-./configure --host="${HOST}" --prefix="${DEPS}" --libdir="${DEST}/lib" --disable-static --disable-debug --disable-curldebug --with-zlib="${DEPS}" --with-ssl="${DEPS}" --with-random --with-ca-bundle="${DEST}/etc/ssl/certs/ca-certificates.crt" --enable-ipv6
+./configure --host="${HOST}" --prefix="${DEPS}" \
+  --libdir="${DEST}/lib" --disable-static \
+  --with-zlib="${DEPS}" \
+  --with-ssl="${DEPS}" \
+  --with-ca-bundle="${DEST}/etc/ssl/certs/ca-certificates.crt" \
+  --disable-debug --disable-curldebug --with-random --enable-ipv6
 make
 make install
 popd
@@ -66,29 +73,51 @@ local URL="http://sourceforge.net/projects/expat/files/expat/${VERSION}/${FILE}"
 
 _download_tgz "${FILE}" "${URL}" "${FOLDER}"
 pushd "target/${FOLDER}"
-./configure --host="${HOST}" --prefix="${DEPS}" --libdir="${DEST}/lib" --disable-static
+./configure --host="${HOST}" --prefix="${DEPS}" \
+  --libdir="${DEST}/lib" --disable-static
 make
 make install
 popd
 }
 
-### GIT ###
-_build_git() {
-local VERSION="2.4.1"
-local FOLDER="git-${VERSION}"
+### SVN::CORE ###
+_build_svn_core() {
+if [ ! -d "${DROBOAPPS}/perl5" ]; then
+  echo "Please cross-compile perl5 before git. See https://github.com/droboports/perl5"
+  exit 1
+fi
+
+local VERSION="1.8.11.0"
+local FOLDER="Alien-SVN-v${VERSION}"
 local FILE="${FOLDER}.tar.gz"
-local URL="https://www.kernel.org/pub/software/scm/git/${FILE}"
+local URL="http://search.cpan.org/CPAN/authors/id/M/MS/MSCHWERN/${FILE}"
 
 _download_tgz "${FILE}" "${URL}" "${FOLDER}"
 pushd "target/${FOLDER}"
-# build perl5 from https://github.com/droboports/perl5 first
-# then "apt-get install qemu binfmt-support qemu-user-static"
 export QEMU_LD_PREFIX="${TOOLCHAIN}/${HOST}/libc"
-./configure --host="${HOST}" --prefix="${DEST}" --with-openssl --with-curl --with-expat --with-perl="${DROBOAPPS}/perl5/bin/perl" --with-python="${DROBOAPPS}/python2/bin/python"
-# ac_cv_fread_reads_directories=no ac_cv_snprintf_returns_bogus=no ac_cv_lib_curl_curl_global_init=yes
+"${DROBOAPPS}/perl5/bin/perl" Build.PL
+# --host="${HOST}" --prefix="${DEPS}" --libdir="${DEST}/lib" PERL=/mnt/DroboFS/Shares/DroboApps/perl5/bin/perl
+popd
+}
+
+### GIT ###
+_build_git() {
+local VERSION="2.5.0"
+local FOLDER="git-${VERSION}"
+local FILE="${FOLDER}.tar.gz"
+local URL="https://www.kernel.org/pub/software/scm/git/${FILE}"
+#export QEMU_LD_PREFIX="${TOOLCHAIN}/${HOST}/libc"
+
+_download_tgz "${FILE}" "${URL}" "${FOLDER}"
+pushd "target/${FOLDER}"
+./configure --host="${HOST}" --prefix="${DEST}" \
+  --mandir="${DEST}/man" \
+  --with-openssl --with-curl --with-expat \
+  ac_cv_fread_reads_directories=no ac_cv_snprintf_returns_bogus=no ac_cv_lib_curl_curl_global_init=yes
+# --with-perl="${DROBOAPPS}/perl5/bin/perl" --with-python="${DROBOAPPS}/python2/bin/python"
 make
 make install
-mv -v "${DEST}/share/man" "${DEST}/man"
+#mv -v "${DEST}/share/man" "${DEST}/man"
 popd
 }
 
@@ -98,6 +127,7 @@ _build() {
   _build_openssl
   _build_curl
   _build_expat
+#  _build_svn_core
   _build_git
   _package
 }

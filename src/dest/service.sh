@@ -7,8 +7,8 @@
 
 framework_version="2.1"
 name="git"
-version="2.4.1"
-description="Git version control system v2.4.1"
+version="2.5.0"
+description="Git version control system v2.5.0"
 depends=""
 webui=""
 
@@ -21,6 +21,7 @@ errorfile="${tmp_dir}/error.txt"
 
 # backwards compatibility
 if [ -z "${FRAMEWORK_VERSION:-}" ]; then
+  framework_version="2.0"
   . "${prog_dir}/libexec/service.subr"
 fi
 
@@ -52,7 +53,6 @@ STDERR=">&4"
 echo "$(date +"%Y-%m-%d %H-%M-%S"):" "${0}" "${@}"
 set -o errexit  # exit on uncaught error code
 set -o nounset  # exit on unset variable
-set -o pipefail # propagate last error code on pipe
 set -o xtrace   # enable script tracing
 
 main "${@}"
