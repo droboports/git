@@ -26,22 +26,23 @@ if [ -z "${FRAMEWORK_VERSION:-}" ]; then
 fi
 
 start() {
+  rm -f "${errorfile}"
+  echo "Java 8 is configured." > "${statusfile}"
+  touch "${pidfile}"
   return 0
 }
 
 is_running() {
-  return 0
-}
-
-is_stopped() {
-  return 0
+  [ -f "${pidfile}" ]
 }
 
 stop() {
+  rm -f "${pidfile}"
   return 0
 }
 
 force_stop() {
+  rm -f "${pidfile}"
   return 0
 }
 
