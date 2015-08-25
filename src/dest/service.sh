@@ -8,7 +8,7 @@
 framework_version="2.1"
 name="git"
 version="2.5.0"
-description="Git version control system v2.5.0"
+description="Git distributed version control"
 depends=""
 webui=""
 
