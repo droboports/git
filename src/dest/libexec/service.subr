@@ -16,7 +16,7 @@
 FRAMEWORK_VERSION="2.1"
 DROBOAPPS_DIR="/mnt/DroboFS/Shares/DroboApps"
 DROBOAPPS_TMPDIR="/tmp/DroboApps"
-APACHE_CONF_DIR="/mnt/DroboFS/System/webui"
+APACHE_CONF_DIR="${DROBOAPPS_DIR}/apache/conf/includes"
 SERVICE_CONF="${DROBOAPPS_DIR}/.servicerc"
 DROBOAPPS_REPO_XML="ftp://updates.drobo.com/droboapps/2.0/droboapps_listing_2.5.2.xml"
 DROBOAPPS_REPO_URL="ftp://updates.drobo.com/droboapps/2.0/downloads"
@@ -971,7 +971,7 @@ start_service() {
   local _appDir="$($DIRNAME "$($REALPATH "${0}")")"
   local _appName="$($BASENAME "${_appDir}")"
 
-  _create_files "${1}"
+  _create_files "${_appName}"
   _prestart_app "${_appName}"
 
   # see if the service is already running
