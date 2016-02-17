@@ -16,7 +16,7 @@ popd
 
 ### OPENSSL ###
 _build_openssl() {
-local VERSION="1.0.2d"
+local VERSION="1.0.2f"
 local FOLDER="openssl-${VERSION}"
 local FILE="${FOLDER}.tar.gz"
 local URL="http://mirror.switch.ch/ftp/mirror/openssl/source/${FILE}"
@@ -46,7 +46,7 @@ popd
 
 ### CURL ###
 _build_curl() {
-local VERSION="7.45.0"
+local VERSION="7.47.1"
 local FOLDER="curl-${VERSION}"
 local FILE="${FOLDER}.tar.gz"
 local URL="http://curl.haxx.se/download/${FILE}"
@@ -102,7 +102,7 @@ popd
 
 ### GIT ###
 _build_git() {
-local VERSION="2.6.3"
+local VERSION="2.7.1"
 local FOLDER="git-${VERSION}"
 local FILE="${FOLDER}.tar.gz"
 local URL="https://www.kernel.org/pub/software/scm/git/${FILE}"
