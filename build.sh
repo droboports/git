@@ -12,6 +12,9 @@ shopt -s expand_aliases
 # print trace
 set -o xtrace
 
+export BUILDDIR="${BUILDDIR:-$(dirname "$(realpath "$0")")}"
+pushd "${BUILDDIR}"
+
 ### logfile ###
 timestamp="$(date +%Y-%m-%d_%H-%M-%S)"
 logfile="logfile_${timestamp}.txt"
@@ -28,13 +31,13 @@ fi
 
 ### environment setup ###
 . crosscompile.sh
-export NAME="$(basename ${PWD})"
+export NAME="$(basename "${BUILDDIR}")"
 export DEST="${BUILD_DEST:-/mnt/DroboFS/Shares/DroboApps/${NAME}}"
-export DEPS="${PWD}/target/install"
+export DEPS="${BUILDDIR}/target/install"
 export CFLAGS="${CFLAGS:-} -Os -fPIC"
 export CXXFLAGS="${CXXFLAGS:-} ${CFLAGS}"
 export CPPFLAGS="-I${DEPS}/include"
-export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,${DEST}/lib -L${DEST}/lib"
+export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,${DEST}/lib -L${DEPS}/lib -L${DEST}/lib"
 alias make="make -j4 V=1 VERBOSE=1"
 
 _wget() {
@@ -67,8 +70,8 @@ _download_tgz() {
   [[ ! -d "download" ]]      && mkdir -p "download"
   [[ ! -d "target" ]]        && mkdir -p "target"
   [[ ! -f "download/${1}" ]] && _wget -O "download/${1}" "${2}"
-  [[   -d "target/${3}" ]]   && rm -vfr "target/${3}"
-  [[ ! -d "target/${3}" ]]   && tar -zxvf "download/${1}" -C target
+  [[   -d "target/${3}" ]]   && rm -fr "target/${3}"
+  [[ ! -d "target/${3}" ]]   && tar -zxf "download/${1}" -C target
   return 0
 }
 
@@ -80,8 +83,8 @@ _download_bz2() {
   [[ ! -d "download" ]]      && mkdir -p "download"
   [[ ! -d "target" ]]        && mkdir -p "target"
   [[ ! -f "download/${1}" ]] && _wget -O "download/${1}" "${2}"
-  [[   -d "target/${3}" ]]   && rm -vfr "target/${3}"
-  [[ ! -d "target/${3}" ]]   && tar -jxvf "download/${1}" -C target
+  [[   -d "target/${3}" ]]   && rm -fr "target/${3}"
+  [[ ! -d "target/${3}" ]]   && tar -jxf "download/${1}" -C target
   return 0
 }
 
@@ -93,8 +96,8 @@ _download_xz() {
   [[ ! -d "download" ]]      && mkdir -p "download"
   [[ ! -d "target" ]]        && mkdir -p "target"
   [[ ! -f "download/${1}" ]] && _wget -O "download/${1}" "${2}"
-  [[   -d "target/${3}" ]]   && rm -vfr "target/${3}"
-  [[ ! -d "target/${3}" ]]   && tar -Jxvf "download/${1}" -C target
+  [[   -d "target/${3}" ]]   && rm -fr "target/${3}"
+  [[ ! -d "target/${3}" ]]   && tar -Jxf "download/${1}" -C target
   return 0
 }
 
@@ -106,8 +109,8 @@ _download_zip() {
   [[ ! -d "download" ]]      && mkdir -p "download"
   [[ ! -d "target" ]]        && mkdir -p "target"
   [[ ! -f "download/${1}" ]] && _wget -O "download/${1}" "${2}"
-  [[   -d "target/${3}" ]]   && rm -vfr "target/${3}"
-  [[ ! -d "target/${3}" ]]   && unzip -d "target" "download/${1}"
+  [[   -d "target/${3}" ]]   && rm -fr "target/${3}"
+  [[ ! -d "target/${3}" ]]   && unzip -od "target" "download/${1}"
   return 0
 }
 
@@ -119,9 +122,9 @@ _download_app() {
   [[ ! -d "download" ]]      && mkdir -p "download"
   [[ ! -d "target" ]]        && mkdir -p "target"
   [[ ! -f "download/${1}" ]] && _wget -O "download/${1}" "${2}"
-  [[   -d "target/${3}" ]]   && rm -vfr "target/${3}"
+  [[   -d "target/${3}" ]]   && rm -fr "target/${3}"
   mkdir -p "target/${3}"
-  tar -zxvf "download/${1}" -C "target/${3}"
+  tar -zxf "download/${1}" -C "target/${3}"
   return 0
 }
 
@@ -131,7 +134,7 @@ _download_app() {
 # $3: url
 _download_git() {
   [[ ! -d "target" ]]        && mkdir -p "target"
-  [[   -d "target/${2}" ]]   && rm -vfr "target/${2}"
+  [[   -d "target/${2}" ]]   && rm -fr "target/${2}"
   [[ ! -d "target/${2}" ]]   && git clone --branch "${1}" --single-branch --depth 1 "${3}" "target/${2}"
   return 0
 }
@@ -157,7 +160,7 @@ _download_file_in_folder() {
 
 # Create the DroboApp tgz file.
 _create_tgz() {
-  local FILE="${PWD}/${NAME}.tgz"
+  local FILE="${BUILDDIR}/${NAME}.tgz"
 
   if [[ -f "${FILE}" ]]; then
     rm -v "${FILE}"
@@ -171,23 +174,23 @@ _create_tgz() {
 # Package the DroboApp
 _package() {
   mkdir -p "${DEST}"
-  [[ -d "src/dest" ]] && cp -vafR "src/dest"/* "${DEST}"/
+  [[ -d "src/dest" ]] && cp -afR "src/dest"/* "${DEST}"/
   find "${DEST}" -name "._*" -print -delete
   _create_tgz
 }
 
 # Remove all compiled files.
 _clean() {
-  rm -vfr "${DEPS}"
-  rm -vfr "${DEST}"
-  rm -vfr target/*
+  rm -fr "${DEPS}"
+  rm -fr "${DEST}"
+  rm -fr target/*
 }
 
 # Removes all files created during the build.
 _dist_clean() {
   _clean
-  rm -vf logfile*
-  rm -vfr download/*
+  rm -f logfile*
+  rm -fr download/*
 }
 
 ### application-specific functions ###
@@ -207,3 +210,4 @@ if [ -n "${1:-}" ]; then
 else
   _build
 fi
+popd

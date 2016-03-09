@@ -1,6 +1,6 @@
-diff -ru a/crypto/Makefile b/crypto/Makefile
---- a/crypto/Makefile	2016-01-28 05:57:08.000000000 -0800
-+++ b/crypto/Makefile	2016-01-28 06:26:02.754631718 -0800
+diff -ur a/crypto/Makefile b/crypto/Makefile
+--- a/crypto/Makefile	2016-03-01 05:36:40.000000000 -0800
++++ b/crypto/Makefile	2016-03-04 17:37:18.550626476 -0800
 @@ -85,11 +85,11 @@
  	@if [ -z "$(THIS)" ]; then $(MAKE) -f $(TOP)/Makefile reflect THIS=$@; fi
  
@@ -42,9 +42,9 @@ diff -ru a/crypto/Makefile b/crypto/Makefile
  
  lint:
  	@target=lint; $(RECURSIVE_MAKE)
-diff -ru a/crypto/objects/Makefile b/crypto/objects/Makefile
---- a/crypto/objects/Makefile	2016-01-28 05:57:08.000000000 -0800
-+++ b/crypto/objects/Makefile	2016-01-28 06:26:02.754631718 -0800
+diff -ur a/crypto/objects/Makefile b/crypto/objects/Makefile
+--- a/crypto/objects/Makefile	2016-03-01 05:36:40.000000000 -0800
++++ b/crypto/objects/Makefile	2016-03-04 17:37:18.550626476 -0800
 @@ -44,11 +44,11 @@
  # objects.pl both reads and writes obj_mac.num
  obj_mac.h: objects.pl objects.txt obj_mac.num
@@ -60,9 +60,9 @@ diff -ru a/crypto/objects/Makefile b/crypto/objects/Makefile
  
  files:
  	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO
-diff -ru a/engines/Makefile b/engines/Makefile
---- a/engines/Makefile	2016-01-28 05:57:20.000000000 -0800
-+++ b/engines/Makefile	2016-01-28 06:26:02.754631718 -0800
+diff -ur a/engines/Makefile b/engines/Makefile
+--- a/engines/Makefile	2016-03-01 05:36:51.000000000 -0800
++++ b/engines/Makefile	2016-03-04 17:37:18.550626476 -0800
 @@ -72,7 +72,7 @@
  
  all:	lib subdirs
@@ -90,9 +90,9 @@ diff -ru a/engines/Makefile b/engines/Makefile
  
  tags:
  	ctags $(SRC)
-diff -ru a/Makefile.org b/Makefile.org
---- a/Makefile.org	2016-01-28 05:56:08.000000000 -0800
-+++ b/Makefile.org	2016-01-28 06:26:02.762631618 -0800
+diff -ur a/Makefile.org b/Makefile.org
+--- a/Makefile.org	2016-03-01 05:35:53.000000000 -0800
++++ b/Makefile.org	2016-03-04 17:37:18.550626476 -0800
 @@ -279,17 +279,17 @@
  build_libssl: build_ssl libssl.pc
  
@@ -164,10 +164,9 @@ diff -ru a/Makefile.org b/Makefile.org
  	@pod2man="`cd ./util; ./pod2mantest $(PERL)`"; \
  	here="`pwd`"; \
  	filecase=; \
-Only in b: Makefile.org.orig
-diff -ru a/Makefile.shared b/Makefile.shared
---- a/Makefile.shared	2016-01-28 05:38:30.000000000 -0800
-+++ b/Makefile.shared	2016-01-28 06:26:02.762631618 -0800
+diff -ur a/Makefile.shared b/Makefile.shared
+--- a/Makefile.shared	2016-03-01 05:35:53.000000000 -0800
++++ b/Makefile.shared	2016-03-04 17:37:18.550626476 -0800
 @@ -105,6 +105,7 @@
      SHAREDFLAGS="$${SHAREDFLAGS:-$(CFLAGS) $(SHARED_LDFLAGS)}"; \
      LIBPATH=`for x in $$LIBDEPS; do echo $$x; done | sed -e 's/^ *-L//;t' -e d | uniq`; \
@@ -184,10 +183,10 @@ diff -ru a/Makefile.shared b/Makefile.shared
  			( $(SET_X); rm -f $$SHLIB$$SHLIB_SUFFIX; \
  			  ln -s $$prev $$SHLIB$$SHLIB_SUFFIX ); \
  		fi; \
-diff -ru a/test/Makefile b/test/Makefile
---- a/test/Makefile	2016-01-28 05:57:22.000000000 -0800
-+++ b/test/Makefile	2016-01-28 06:26:02.766631568 -0800
-@@ -138,7 +138,7 @@
+diff -ur a/test/Makefile b/test/Makefile
+--- a/test/Makefile	2016-03-01 05:36:53.000000000 -0800
++++ b/test/Makefile	2016-03-04 17:37:18.554626787 -0800
+@@ -139,7 +139,7 @@
  tags:
  	ctags $(SRC)
  
@@ -196,7 +195,7 @@ diff -ru a/test/Makefile b/test/Makefile
  
  apps:
  	@(cd ..; $(MAKE) DIRS=apps all)
-@@ -416,121 +416,121 @@
+@@ -421,121 +421,121 @@
  		link_app.$${shlib_target}
  
  $(RSATEST)$(EXE_EXT): $(RSATEST).o $(DLIBCRYPTO)
@@ -357,7 +356,7 @@ diff -ru a/test/Makefile b/test/Makefile
  
  $(VERIFYEXTRATEST)$(EXE_EXT): $(VERIFYEXTRATEST).o
  	@target=$(VERIFYEXTRATEST) $(BUILD_CMD)
-@@ -549,7 +549,7 @@
+@@ -557,7 +557,7 @@
  #	fi
  
  dummytest$(EXE_EXT): dummytest.o $(DLIBCRYPTO)
